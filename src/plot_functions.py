@@ -164,7 +164,6 @@ def compute_earth_facecolors(earth_local, sun_vec_km):
 
 def compute_facecolors(moon_center_km, sun_vec_km, moon_local, sphere_res, scale_factor=1.0):
     # Moon shading based on Sun direction + Earth's umbra shadow.
-    # The key: during eclipse, parts of the Moon inside Earth's shadow cone get darkened.
     # scale_factor: the factor by which moon_local is scaled for visualization
     
     sun_unit = sun_vec_km / (np.linalg.norm(sun_vec_km) + 1e-12)
@@ -181,7 +180,6 @@ def compute_facecolors(moon_center_km, sun_vec_km, moon_local, sphere_res, scale
     d_es = np.linalg.norm(sun_vec_km) + 1e-12
     axis_unit = -sun_vec_km / d_es  # Direction away from Sun
 
-    # --- Whole-moon shadow factor (center-based) ---
     # If the Moon center enters the umbra/penumbra, dim the whole disk a bit
     proj_center = np.dot(moon_center_km, axis_unit)
     d_perp_center = np.linalg.norm(moon_center_km - proj_center * axis_unit)
@@ -197,7 +195,7 @@ def compute_facecolors(moon_center_km, sun_vec_km, moon_local, sphere_res, scale
         elif d_perp_center < r_penumbra_center:
             center_shadow_factor = 0.6   # penumbra dimming
     
-    # Calculate shadow in ORIGINAL (unscaled) coordinates
+    # Calculate shadow in original (unscaled) coordinates
     # moon_local is scaled by scale_factor, so unscale it for shadow calc
     moon_local_unscaled = moon_local / scale_factor  # Back to original size
     pts_unscaled = moon_center_km[None, None, :] + moon_local_unscaled  # Original coords
@@ -260,13 +258,13 @@ def make_update(ax, lim, earth_local, moon_local, r_m_rel, r_s_rel, sun_line, Re
         sun_v = r_s_rel[frame_i]
         moon_c = r_m_rel[frame_i]
         
-        # 1. Update sun direction line
+        # Update sun direction line
         s_norm = np.linalg.norm(sun_v)
         sdir = sun_v / (s_norm + 1e-12)
         sun_line.set_data([0, -sdir[0]*lim], [0, -sdir[1]*lim])
         sun_line.set_3d_properties([0, -sdir[2]*lim])
 
-        # 2. Update Earth (remove and replot with new colors)
+        # Update Earth (remove and replot with new colors)
         earth_facecolors = compute_earth_facecolors(earth_local, sun_v)
         if earth_surf is not None:
             earth_surf.remove()
@@ -276,7 +274,7 @@ def make_update(ax, lim, earth_local, moon_local, r_m_rel, r_s_rel, sun_line, Re
             facecolors=earth_facecolors, linewidth=0, antialiased=False, shade=False
         )
 
-        # 3. Update Moon (remove and replot with new position and colors)
+        # Update Moon (remove and replot with new position and colors)
         X = moon_c[0] + moon_local[..., 0]
         Y = moon_c[1] + moon_local[..., 1]
         Z = moon_c[2] + moon_local[..., 2]
@@ -295,7 +293,7 @@ def make_update(ax, lim, earth_local, moon_local, r_m_rel, r_s_rel, sun_line, Re
             shade=False
         )
 
-        # 4. Update Title with current time
+        # Update Title with current time
         array_idx = idx[frame_i]
         ax.set_title(f"{title}\n t = {t[array_idx]/3600:.2f} h (from start)")
         

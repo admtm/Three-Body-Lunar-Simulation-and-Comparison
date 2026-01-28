@@ -16,12 +16,9 @@ from src import plot_functions as pf
 
 # Path to cached simulation results
 # Absolute path to the script's directory
-# If your 'data' folder is in the same folder as the script:
 DATA_FILE = current_dir / "data" / "simulation_results.npz"
 
-# Debugging: Print this to your console to see where it's actually looking
 print(f"DEBUG: Looking for data at: {DATA_FILE}")
-print(DATA_FILE)
 
 def load_cached_results():
     if not DATA_FILE.exists():
@@ -43,7 +40,7 @@ def load_cached_results():
                     "id": p.upper(),
                     "history": data[h_key],
                     "t": data[f"t_{p}"],
-                    # Take only the first one if it exists, otherwise None
+                    # Take only the first one if it eclipses, otherwise None
                     "eclipse": e_list[0] if len(e_list) > 0 else None,
                     # .item() is needed to convert from numpy array to string
                     "title": str(data[f"title_{p}"].item()) 
@@ -54,7 +51,7 @@ def load_cached_results():
 from scipy.interpolate import interp1d
 
 def sync_to_nasa(model_list):
-    # 1. Find the NASA model, it's our reference
+    # Find the NASA model, it's our reference
     nasa = next((m for m in model_list if m['id'] == 'NASA'), None)
     if not nasa:
         return model_list # If there's no NASA, we can't synchronize to anything
@@ -65,15 +62,15 @@ def sync_to_nasa(model_list):
 
     for m in model_list:
         try:
-            # 2. Create interpolation function based on original data
+            # Create interpolation function based on original data
             # history shape: (time, object, coordinate) -> (N, 3, 3)
             interpolator = interp1d(m['t'], m['history'], axis=0, kind='linear', fill_value="extrapolate")
             
-            # 3. Calculate positions at NASA time points
+            # Calculate positions at NASA time points
             m['history'] = interpolator(common_t)
             m['t'] = common_t
             
-            # 4. Align the eclipse window to NASA as well
+            # Align the eclipse window to NASA as well
             # Since now all models have the same t, the indices will be the same
             m['eclipse'] = nasa['eclipse']
             
@@ -102,7 +99,6 @@ def main():
 
     try:
         all_animations = []
-        # Iterate through the loaded models
         for model in model_list:
             # Check if a valid eclipse event exists for the model
             eclipse = model.get("eclipse")
@@ -110,7 +106,6 @@ def main():
             if eclipse is not None:
                 print(f"\n>>> Running Animation: {model['title']}...")
                 
-                # Call the 3D animation function
                 anim = pf.animate_eclipse_3d_geocentric_with_cone_shadow(
                 model["history"], 
                 model["t"], 
